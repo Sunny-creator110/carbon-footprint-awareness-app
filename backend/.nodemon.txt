@@ -1,0 +1,4 @@
+PORT=5000
+MONGODB_URI=mongodb+srv://root:MySecretPass123@cluster0.w4bbm2v.mongodb.net/carbon-footprint?appName=Cluster0
+JWT_SECRET=supersecretproductionreadytokendailytrace
+NODE_ENV=development
