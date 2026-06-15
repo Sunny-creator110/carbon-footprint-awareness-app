@@ -10,6 +10,51 @@ A production-ready, accessible, scalable Carbon Footprint Awareness Platform bui
 - **Frontend (/frontend)**: React 18, Tailwind CSS, Lucide icons, Vitest, React Testing Library. Designed to target **100/100 Accessibility (A11y)** guidelines.
 - **Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml` for unified local/production service execution.
 
+### Architectural Flowchart
+
+```mermaid
+graph TD
+    classDef primary fill:#15803d,stroke:#22c55e,stroke-width:2px,color:#fff;
+    classDef secondary fill:#0f172a,stroke:#334155,stroke-width:1px,color:#e2e8f0;
+    classDef highlight fill:#d97706,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    classDef success fill:#16a34a,stroke:#4ade80,stroke-width:2px,color:#fff;
+
+    Start([Start EcoTrace App]) --> Auth{User Auth Status}
+    Auth -- Unauthenticated --> LoginRegister[Login / Register UI]
+    LoginRegister --> |Success & JWT Token| Dashboard[Dashboard Core UI]
+    Auth -- Authenticated --> Dashboard
+
+    subgraph Frontend [A11y Dashboard UI]
+        Dashboard --> Form[Activity Log Form]
+        Dashboard --> Budget[Carbon Budget Tracker]
+        Dashboard --> Analytics[Real-Time Analytics]
+        Dashboard --> Insights[Dynamic Reduction Insights]
+    end
+
+    Form --> |Submit Params + JWT| Validator[Express Validator Layer]
+    
+    subgraph Backend [Controller-Service-Repository API]
+        Validator --> |Sanitized Data| Engine[Estimation Engine]
+        Engine --> |Calculate CO2 kg| Service[Footprint Service]
+        Service --> |Query/Aggregate| Repo[Footprint Repository]
+    end
+
+    Repo --> |Mongoose| DB[(MongoDB Atlas)]
+    DB --> |Persisted Entry| Repo
+    Repo --> |Analytics & History JSON| Dashboard
+    
+    subgraph Gamification [Gamification & Tips Engine]
+        Analytics --> |Check Highest Contributor| Tips[Tailored Reduction Tips]
+        Analytics --> |Evaluate Limits| EcoPoints[Eco Points Accumulator]
+        Analytics --> |Check Benchmarks| Badges[Climate Badges Unlocked]
+    end
+
+    class Start,Dashboard,Form,Analytics primary;
+    class LoginRegister,Validator,Engine,Service,Repo secondary;
+    class Budget,EcoPoints,Badges success;
+    class Tips,Insights highlight;
+```
+
 ---
 
 ## Getting Started Locally
