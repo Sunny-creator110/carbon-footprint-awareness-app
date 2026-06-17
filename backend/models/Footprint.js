@@ -30,4 +30,8 @@ const FootprintSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Compound indexes for query optimization
+FootprintSchema.index({ userId: 1, activityType: 1 });
+FootprintSchema.index({ userId: 1, date: -1 });
+
 module.exports = mongoose.model('Footprint', FootprintSchema);

@@ -23,7 +23,7 @@ const logActivity = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Failed to log activity' : error.message,
     });
   }
 };
@@ -46,7 +46,7 @@ const getHistory = async (req, res) => {
       success: true,
       count: 0,
       data: [],
-      message: 'Safely caught database query error: ' + error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Failed to retrieve history' : ('Safely caught database query error: ' + error.message),
     });
   }
 };
@@ -70,7 +70,7 @@ const getAnalytics = async (req, res) => {
         totalEmissions: 0,
         breakdown: { utility: 0, transportation: 0, consumption: 0 }
       },
-      message: 'Safely caught database query error: ' + error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Failed to retrieve analytics' : ('Safely caught database query error: ' + error.message),
     });
   }
 };
@@ -90,7 +90,7 @@ const deleteLog = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: process.env.NODE_ENV === 'production' ? 'Failed to delete activity' : error.message,
     });
   }
 };

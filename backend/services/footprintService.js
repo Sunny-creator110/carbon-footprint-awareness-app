@@ -1,6 +1,8 @@
 const footprintRepository = require('../repositories/footprintRepository');
 const { calculateEmissions } = require('./estimationEngine');
 
+const analyticsCache = new Map();
+
 class FootprintService {
   /**
    * Log an activity and calculate its carbon footprint
@@ -25,7 +27,14 @@ class FootprintService {
       footprintData.date = new Date(date);
     }
 
-    return await footprintRepository.create(footprintData);
+    const created = await footprintRepository.create(footprintData);
+    
+    // Invalidate analytics cache for the user
+    if (userId) {
+      analyticsCache.delete(userId.toString());
+    }
+
+    return created;
   }
 
   /**
@@ -43,6 +52,11 @@ class FootprintService {
    * @returns {Promise<Object>}
    */
   async getUserAnalytics(userId) {
+    const cacheKey = userId ? userId.toString() : '';
+    if (cacheKey && analyticsCache.has(cacheKey)) {
+      return analyticsCache.get(cacheKey);
+    }
+
     const rawAggregates = await footprintRepository.getAggregateEmissions(userId);
     
     const breakdown = {
@@ -60,11 +74,16 @@ class FootprintService {
       }
     });
 
-    return {
+    const result = {
       totalEmissions: parseFloat(totalEmissions.toFixed(3)),
       breakdown,
       raw: rawAggregates,
     };
+
+    if (cacheKey) {
+      analyticsCache.set(cacheKey, result);
+    }
+    return result;
   }
 
   /**
@@ -78,6 +97,12 @@ class FootprintService {
     if (!deleted) {
       throw new Error('Footprint log not found or unauthorized');
     }
+    
+    // Invalidate analytics cache for the user
+    if (userId) {
+      analyticsCache.delete(userId.toString());
+    }
+
     return deleted;
   }
 }

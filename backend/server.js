@@ -11,6 +11,7 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 const compression = require('compression');
 const connectDB = require('./config/db');
 
@@ -31,7 +32,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://img.shields.io"],
-      connectSrc: ["'self'", "*"]
+      connectSrc: ["'self'", "https://ecotrace-carbon-app.onrender.com", "http://localhost:5000", "http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:5000", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
     }
   }
 }));
@@ -39,11 +40,26 @@ app.use(helmet({
 // Prevent NoSQL Injection attacks
 app.use(mongoSanitize());
 
-// Restrict CORS to secure endpoints
+// Prevent HTTP Parameter Pollution attacks
+app.use(hpp());
+
+// Restrict CORS to secure Whitelisted endpoints
+const allowedOrigins = [
+  'https://ecotrace-carbon-app.onrender.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001'
+];
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://ecotrace-carbon-app.onrender.com'] 
-    : true,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'test') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 };
 app.use(cors(corsOptions));
@@ -101,12 +117,12 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: 'Resource not found' });
 });
 
-// Global Error Handler
+// Global Error Handler (masks stacks in production to prevent leakage)
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : (err.message || 'Internal Server Error'),
   });
 });
 

@@ -8,7 +8,7 @@ const User = require('../models/User');
  */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'testsecretsecret', {
-    expiresIn: '30d',
+    expiresIn: '24h',
   });
 };
 
@@ -52,7 +52,10 @@ const registerUser = async (req, res) => {
       res.status(400).json({ success: false, message: 'Invalid user data' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : error.message,
+    });
   }
 };
 
@@ -95,7 +98,10 @@ const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : error.message,
+    });
   }
 };
 
@@ -112,7 +118,10 @@ const getMe = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : error.message,
+    });
   }
 };
 
