@@ -8,6 +8,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const compression = require('compression');
 const connectDB = require('./config/db');
 
 // Load environment variables
@@ -15,9 +19,57 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Enable Gzip Compression for network efficiency
+app.use(compression());
+
+// Secure HTTP response headers with Helmet
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://img.shields.io"],
+      connectSrc: ["'self'", "*"]
+    }
+  }
+}));
+
+// Prevent NoSQL Injection attacks
+app.use(mongoSanitize());
+
+// Restrict CORS to secure endpoints
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://ecotrace-carbon-app.onrender.com'] 
+    : true,
+  credentials: true
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Rate Limiting configurations (scaled up during tests to prevent flakes)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: process.env.NODE_ENV === 'test' ? 10000 : 100,
+  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 mins
+  max: process.env.NODE_ENV === 'test' ? 10000 : 15,
+  message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limits
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));

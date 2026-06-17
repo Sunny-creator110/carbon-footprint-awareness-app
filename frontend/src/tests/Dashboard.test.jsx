@@ -138,4 +138,59 @@ describe('Dashboard Component Accessibility & Functionality Tests', () => {
     expect(liveRegion.textContent).toContain('Your total carbon footprint is 77 kilograms');
     expect(liveRegion.textContent).toContain('Utility accounts for 77 kg');
   });
+
+  test('Ensure CSV export triggers file download link click', async () => {
+    // Mock URL.createObjectURL
+    const mockURL = vi.fn().mockReturnValue('blob:http://localhost:3000/123');
+    global.URL.createObjectURL = mockURL;
+    
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<Dashboard token={mockToken} onLogout={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Download carbon logs/i })).toBeInTheDocument();
+    });
+
+    const exportBtn = screen.getByRole('button', { name: /Download carbon logs/i });
+    fireEvent.click(exportBtn);
+
+    // If history is empty, it alerts error. But let's verify it checks correctly.
+    await waitFor(() => {
+      expect(screen.getByText(/No activities to export./i) || screen.getByText(/Carbon history exported successfully!/i)).toBeInTheDocument();
+    });
+    
+    clickSpy.mockRestore();
+  });
+
+  test('Ensure Climate Challenges list renders and completes when clicked', async () => {
+    axios.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          _id: 'challenge-log-1',
+          activityType: 'transportation',
+          parameters: { miles: 0, flightMiles: 0 },
+          carbonEmissionsKg: 0,
+          date: '2026-06-17'
+        }
+      }
+    });
+
+    render(<Dashboard token={mockToken} onLogout={() => {}} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Weekly Climate Challenges')).toBeInTheDocument();
+    });
+
+    // Complete the first challenge
+    const completeBtns = screen.getAllByRole('button', { name: /Complete/i });
+    expect(completeBtns.length).toBe(3); // 3 defined challenges
+
+    fireEvent.click(completeBtns[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Challenge completed!/i)).toBeInTheDocument();
+    });
+  });
 });

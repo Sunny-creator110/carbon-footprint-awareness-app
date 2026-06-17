@@ -44,6 +44,21 @@ function Dashboard({ token, onLogout }) {
   // Ref to skip link/main section to focus if required
   const mainFormRef = useRef(null);
 
+  // A11y Alert Refs
+  const errorRef = useRef(null);
+  const successRef = useRef(null);
+
+  // Filter & Sort States
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  // Eco Challenges definitions
+  const challenges = [
+    { id: 'bike_commute', name: 'Commute Green', icon: '🚲', desc: 'Bike or walk instead of driving today.', category: 'transportation', params: { miles: 0, flightMiles: 0 }, points: 50 },
+    { id: 'meatless_meal', name: 'Go Meat-Free', icon: '🥗', desc: 'Substitute meat with a plant-based meal.', category: 'consumption', params: { meatServings: 0, wasteKg: 0.2 }, points: 40 },
+    { id: 'vampire_power', name: 'Vampire Power Cut', icon: '🔌', desc: 'Unplug all standby devices and chargers.', category: 'utility', params: { kwh: 0.5, gasTherms: 0 }, points: 30 }
+  ];
+
   useEffect(() => {
     fetchData();
   }, [token]);
@@ -167,6 +182,75 @@ function Dashboard({ token, onLogout }) {
       setErrorMsg('Failed to delete log entry.');
     }
   };
+
+  const handleCompleteChallenge = async (challenge) => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    setSubmitting(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post('/api/footprint', {
+        activityType: challenge.category,
+        parameters: challenge.params,
+        date: new Date().toISOString().split('T')[0]
+      }, { headers });
+
+      const newLog = res.data?.data || res.body?.data;
+      setSuccessMsg(`Challenge completed! "${challenge.name}" logged. Gained +${challenge.points} Eco Points!`);
+      setSrAnnouncement(`Success: Completed challenge ${challenge.name} earning ${challenge.points} eco points. Recorded ${newLog.carbonEmissionsKg} kg of CO2 equivalent.`);
+      await fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.response?.data?.errors?.[0]?.message || 'Failed to complete challenge.';
+      setErrorMsg(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (history.length === 0) {
+      setErrorMsg('No activities to export.');
+      return;
+    }
+
+    const headers = ['Date', 'Category', 'Parameters', 'Emissions (kg CO2)'];
+    const rows = history.map(item => [
+      new Date(item.date).toLocaleDateString(),
+      item.activityType,
+      Object.entries(item.parameters || {}).map(([k, v]) => `${k}:${v}`).join(';'),
+      item.carbonEmissionsKg
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => `"${val}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ecotrace_carbon_history_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setSuccessMsg('Carbon history exported successfully!');
+    setSrAnnouncement('Successfully exported carbon footprint log history as a CSV file.');
+  };
+
+  useEffect(() => {
+    if (errorMsg && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [errorMsg]);
+
+  useEffect(() => {
+    if (successMsg && successRef.current) {
+      successRef.current.focus();
+    }
+  }, [successMsg]);
 
   // Recommendations Logic based on values
   const getInsights = () => {
@@ -387,7 +471,9 @@ function Dashboard({ token, onLogout }) {
 
             {errorMsg && (
               <div 
-                className="mb-4 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-sm flex items-start space-x-2"
+                ref={errorRef}
+                tabIndex="-1"
+                className="mb-4 p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-sm flex items-start space-x-2 focus:outline-none focus:ring-1 focus:ring-red-500"
                 role="alert"
                 id="form-validation-error"
               >
@@ -398,7 +484,9 @@ function Dashboard({ token, onLogout }) {
 
             {successMsg && (
               <div 
-                className="mb-4 p-3.5 bg-green-950/40 border border-green-500/30 rounded-xl text-green-300 text-sm flex items-start space-x-2" 
+                ref={successRef}
+                tabIndex="-1"
+                className="mb-4 p-3.5 bg-green-950/40 border border-green-500/30 rounded-xl text-green-300 text-sm flex items-start space-x-2 focus:outline-none focus:ring-1 focus:ring-green-500" 
                 role="alert"
               >
                 <CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -443,6 +531,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setKwh(e.target.value)}
                       placeholder="e.g., 120"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                   <div>
@@ -458,6 +548,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setGasTherms(e.target.value)}
                       placeholder="e.g., 12"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                 </div>
@@ -479,6 +571,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setMiles(e.target.value)}
                       placeholder="e.g., 45"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                   <div>
@@ -494,6 +588,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setFlightMiles(e.target.value)}
                       placeholder="e.g., 350"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                 </div>
@@ -515,6 +611,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setMeatServings(e.target.value)}
                       placeholder="e.g., 2"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                   <div>
@@ -530,6 +628,8 @@ function Dashboard({ token, onLogout }) {
                       onChange={(e) => setWasteKg(e.target.value)}
                       placeholder="e.g., 5.5"
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                      aria-invalid={errorMsg ? "true" : "false"}
+                      aria-describedby={errorMsg ? "form-validation-error" : undefined}
                     />
                   </div>
                 </div>
@@ -546,6 +646,8 @@ function Dashboard({ token, onLogout }) {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 transition duration-200"
+                  aria-invalid={errorMsg ? "true" : "false"}
+                  aria-describedby={errorMsg ? "form-validation-error" : undefined}
                 />
               </div>
 
@@ -659,7 +761,7 @@ function Dashboard({ token, onLogout }) {
                     min="10"
                     value={carbonBudget}
                     onChange={(e) => setCarbonBudget(Number(e.target.value) || 100)}
-                    className="w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-center font-bold text-white focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-slate-900"
+                    className="w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-center font-bold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
                   />
                   <span className="text-xs text-slate-400 font-bold">kg</span>
                 </div>
@@ -725,6 +827,38 @@ function Dashboard({ token, onLogout }) {
             </div>
           </section>
 
+          {/* Interactive Eco-Challenges Section */}
+          <section className="bg-[#0f172a]/95 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-xl relative overflow-hidden" aria-labelledby="challenges-title">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500" />
+            <h2 id="challenges-title" className="text-xl font-bold text-white mb-2 flex items-center space-x-2">
+              <PlusCircle className="h-5 w-5 text-green-400" />
+              <span>Weekly Climate Challenges</span>
+            </h2>
+            <p className="text-xs text-slate-400 mb-4">
+              Complete sustainability goals to automatically log low-carbon habits and earn Eco Points.
+            </p>
+            <div className="space-y-3">
+              {challenges.map(challenge => (
+                <div key={challenge.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-slate-900/40 border border-slate-800/60 rounded-xl hover:border-slate-700/80 transition duration-200 gap-3">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl" role="img" aria-label={challenge.name}>{challenge.icon}</span>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-200">{challenge.name}</h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{challenge.desc} (+{challenge.points} pts)</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleCompleteChallenge(challenge)}
+                    disabled={submitting}
+                    className="px-3.5 py-1.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/20 rounded-lg text-xs font-bold transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
+                  >
+                    Complete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Dynamic Climate Insights Section */}
           <section className="bg-[#0f172a]/95 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-xl relative overflow-hidden" aria-labelledby="insights-title">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
@@ -767,6 +901,45 @@ function Dashboard({ token, onLogout }) {
           </div>
         </header>
 
+        {/* Filters & Export Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-800/50 pb-4">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Activity Filter Categories">
+            {['all', 'utility', 'transportation', 'consumption'].map((cat) => (
+              <button
+                key={cat}
+                role="tab"
+                aria-selected={activeFilter === cat}
+                onClick={() => setActiveFilter(cat)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 ${
+                  activeFilter === cat 
+                    ? 'bg-green-600 text-white font-bold' 
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-lg text-xs font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
+              aria-label={`Sort activities by date ${sortOrder === 'desc' ? 'ascending' : 'descending'}`}
+            >
+              Sort: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              className="px-3.5 py-1.5 bg-green-700/20 hover:bg-green-700/30 text-green-400 border border-green-700/30 rounded-lg text-xs font-bold transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
+              aria-label="Download carbon logs as CSV file"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center py-12 text-slate-400">
             <span className="inline-block animate-pulse">Retrieving historical records...</span>
@@ -790,46 +963,66 @@ function Dashboard({ token, onLogout }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-sm text-slate-300">
-                {history.map((item) => (
-                  <tr key={item._id} className="hover:bg-slate-900/40 transition duration-150">
-                    <td className="py-3.5 px-4 font-medium">
-                      {new Date(item.date).toLocaleDateString(undefined, { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${
-                        item.activityType === 'utility' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                        item.activityType === 'transportation' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
-                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      }`}>
-                        {item.activityType === 'utility' ? <Zap className="h-3 w-3 mr-0.5" /> :
-                         item.activityType === 'transportation' ? <Car className="h-3 w-3 mr-0.5" /> :
-                         <ShoppingBag className="h-3 w-3 mr-0.5" />}
-                        {item.activityType}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-400">
-                      {Object.entries(item.parameters || {})
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(', ')}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-100">
-                      {item.carbonEmissionsKg} kg
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => handleDelete(item._id, item.carbonEmissionsKg)}
-                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
-                        aria-label={`Delete ${item.activityType} log entry from ${new Date(item.date).toLocaleDateString()}`}
-                      >
-                        <Trash2 className="h-4.5 w-4.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  const filtered = history
+                    .filter(item => activeFilter === 'all' || item.activityType === activeFilter)
+                    .sort((a, b) => {
+                      const dateA = new Date(a.date);
+                      const dateB = new Date(b.date);
+                      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+                    });
+                  
+                  if (filtered.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-slate-500 italic">
+                          No historical entries found matching filter "{activeFilter}".
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return filtered.map((item) => (
+                    <tr key={item._id} className="hover:bg-slate-900/40 transition duration-150">
+                      <td className="py-3.5 px-4 font-medium">
+                        {new Date(item.date).toLocaleDateString(undefined, { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${
+                          item.activityType === 'utility' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                          item.activityType === 'transportation' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
+                          'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        }`}>
+                          {item.activityType === 'utility' ? <Zap className="h-3 w-3 mr-0.5" /> :
+                           item.activityType === 'transportation' ? <Car className="h-3 w-3 mr-0.5" /> :
+                           <ShoppingBag className="h-3 w-3 mr-0.5" />}
+                          {item.activityType}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-slate-400">
+                        {Object.entries(item.parameters || {})
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(', ')}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                        {item.carbonEmissionsKg} kg
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleDelete(item._id, item.carbonEmissionsKg)}
+                          className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
+                          aria-label={`Delete ${item.activityType} log entry from ${new Date(item.date).toLocaleDateString()}`}
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

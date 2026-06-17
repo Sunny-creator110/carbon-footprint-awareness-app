@@ -18,7 +18,7 @@ class FootprintRepository {
    * @returns {Promise<Array>}
    */
   async findByUserId(userId) {
-    return await Footprint.find({ userId }).sort({ date: -1 });
+    return await Footprint.find({ userId }).sort({ date: -1 }).lean();
   }
 
   /**

@@ -78,7 +78,7 @@ function App() {
       {/* Skip to Content - Screen Reader A11y */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-green-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-green-600 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
       >
         Skip to main content
       </a>
@@ -136,7 +136,7 @@ function App() {
       </header>
 
       {/* Main Container */}
-      <main id="main-content" className="flex-grow flex flex-col">
+      <main id="main-content" className="flex-grow flex flex-col" tabIndex="-1">
         {loading && !user && (
           <div className="flex-grow flex items-center justify-center">
             <Loader2 className="h-10 w-10 text-green-500 animate-spin" />
@@ -250,7 +250,7 @@ function App() {
                     Don't have an account?{' '}
                     <button
                       onClick={() => { setAuthMode('register'); setAuthError(''); }}
-                      className="text-green-400 hover:text-green-300 font-semibold focus:outline-none focus:underline"
+                      className="text-green-400 hover:text-green-300 font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 rounded-md px-1"
                     >
                       Sign Up
                     </button>
@@ -260,7 +260,7 @@ function App() {
                     Already have an account?{' '}
                     <button
                       onClick={() => { setAuthMode('login'); setAuthError(''); }}
-                      className="text-green-400 hover:text-green-300 font-semibold focus:outline-none focus:underline"
+                      className="text-green-400 hover:text-green-300 font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 rounded-md px-1"
                     >
                       Sign In
                     </button>
@@ -278,8 +278,8 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-slate-500 text-xs">
           <p>&copy; {new Date().getFullYear()} EcoTrace Platform. Built to support absolute carbon neutrality.</p>
           <div className="flex space-x-4 mt-2 sm:mt-0">
-            <a href="#" className="hover:text-slate-300 focus:outline-none focus:underline">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-300 focus:outline-none focus:underline">Terms of Service</a>
+            <a href="#" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Privacy Policy</a>
+            <a href="#" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Terms of Service</a>
           </div>
         </div>
       </footer>
