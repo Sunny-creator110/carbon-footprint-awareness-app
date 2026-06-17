@@ -7,7 +7,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [authMode, setAuthMode] = useState('landing'); // 'landing' | 'login' | 'register'
   
   // Auth Form State
   const [name, setName] = useState('');
@@ -71,6 +71,7 @@ function App() {
     setToken('');
     localStorage.removeItem('token');
     setUser(null);
+    setAuthMode('landing');
   };
 
   return (
@@ -150,12 +151,75 @@ function App() {
           </div>
         )}
 
-        {!loading && !user && (
-          <div className="flex-grow flex items-center justify-center p-6">
+        {!loading && !user && authMode === 'landing' && (
+          <div className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 text-center max-w-4xl mx-auto z-10 relative">
+            <div className="p-3.5 bg-green-500/10 rounded-2xl text-green-400 border border-green-500/20 mb-6 animate-pulse">
+              <Leaf className="h-12 w-12" />
+            </div>
+            
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white mb-6 leading-tight">
+              Trace Your Footprint.<br />
+              <span className="bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                Heal Our Planet.
+              </span>
+            </h1>
+            
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10">
+              Join a global community tracking daily carbon outputs, completing weekly sustainability challenges, unlocking green achievements, and earning rewards. One green action at a time.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 w-full sm:w-auto">
+              <button
+                onClick={() => { setAuthMode('register'); setAuthError(''); }}
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-xl transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 shadow-xl shadow-green-950/30"
+              >
+                Start Your Green Journey
+              </button>
+              <button
+                onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                className="w-full sm:w-auto px-8 py-4 bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold rounded-xl transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900"
+              >
+                Explore Dashboard
+              </button>
+            </div>
+            
+            {/* Value Props / Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
+              <div className="bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl backdrop-blur-md">
+                <span className="text-2xl mb-3 block">📊</span>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Real-Time Estimation</h2>
+                <p className="text-xs text-slate-400 leading-relaxed">Log utility, travel, and eating habits using verified 2026 IPCC emission factors.</p>
+              </div>
+              <div className="bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl backdrop-blur-md">
+                <span className="text-2xl mb-3 block">🏆</span>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Gamified Milestones</h2>
+                <p className="text-xs text-slate-400 leading-relaxed">Complete active weekly climate challenges, earn Eco Points, and collect climate badges.</p>
+              </div>
+              <div className="bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl backdrop-blur-md">
+                <span className="text-2xl mb-3 block">💡</span>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-2">Tailored Insights</h2>
+                <p className="text-xs text-slate-400 leading-relaxed">Receive personalized reduction advice focused on your highest carbon output categories.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !user && (authMode === 'login' || authMode === 'register') && (
+          <div className="flex-grow flex items-center justify-center p-6 z-10 relative">
             <div className="w-full max-w-md bg-[#0f172a]/80 border border-slate-800/80 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+              
+              {/* Back Button */}
+              <button 
+                onClick={() => { setAuthMode('landing'); setAuthError(''); setAuthSuccess(''); }}
+                className="absolute top-4 left-4 text-xs font-semibold text-slate-400 hover:text-slate-200 transition flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-900 rounded px-1 py-0.5"
+                aria-label="Back to landing page"
+              >
+                <span>← Back</span>
+              </button>
+
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500" />
               
-              <div className="flex flex-col items-center mb-8">
+              <div className="flex flex-col items-center mb-8 mt-4">
                 <div className="p-3 bg-green-500/10 rounded-full text-green-400 border border-green-500/20 mb-3">
                   <Leaf className="h-8 w-8" />
                 </div>

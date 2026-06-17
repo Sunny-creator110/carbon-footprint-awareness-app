@@ -20,28 +20,46 @@ describe('App Component Root & Auth Tests', () => {
     expect(skipLink).toHaveAttribute('href', '#main-content');
   });
 
-  test('should display registration screen when clicking Sign Up', async () => {
+  test('should render the landing page by default', () => {
+    render(<App />);
+    expect(screen.getByText(/Trace Your Footprint/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Start Your Green Journey/i })).toBeInTheDocument();
+  });
+
+  test('should display registration screen when clicking Start Your Green Journey', async () => {
     render(<App />);
     
-    // Default mode is login, check for Sign Up button
-    const signUpToggle = screen.getByRole('button', { name: /Sign Up/i });
-    fireEvent.click(signUpToggle);
+    const ctaBtn = screen.getByRole('button', { name: /Start Your Green Journey/i });
+    fireEvent.click(ctaBtn);
 
     // Should now show register fields like "Full Name"
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create Account/i })).toBeInTheDocument();
   });
 
-  test('should toggle back to Sign In from registration screen', () => {
+  test('should display login screen when clicking Login navigation button', () => {
     render(<App />);
     
-    // Toggle to register
-    fireEvent.click(screen.getByRole('button', { name: /Sign Up/i }));
-    
-    // Toggle back to login
-    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }));
+    // Toggle to login from header nav
+    const loginBtns = screen.getAllByRole('button', { name: /Login/i });
+    fireEvent.click(loginBtns[0]); // Header nav button
 
     expect(screen.queryByLabelText(/Full Name/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Log In/i })).toBeInTheDocument();
+  });
+
+  test('should go back to landing page when clicking Back on auth card', () => {
+    render(<App />);
+    
+    // Switch to login card
+    const loginBtns = screen.getAllByRole('button', { name: /Login/i });
+    fireEvent.click(loginBtns[0]);
+
+    // Click Back
+    const backBtn = screen.getByRole('button', { name: /Back/i });
+    fireEvent.click(backBtn);
+
+    // Should be back on the landing page
+    expect(screen.getByText(/Trace Your Footprint/i)).toBeInTheDocument();
   });
 });
