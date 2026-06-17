@@ -348,8 +348,8 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-slate-500 text-xs">
           <p>&copy; {new Date().getFullYear()} EcoTrace Platform. Built to support absolute carbon neutrality.</p>
           <div className="flex space-x-4 mt-2 sm:mt-0">
-            <a href="#" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Terms of Service</a>
+            <a href="#privacy" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Privacy Policy</a>
+            <a href="#terms" className="hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 focus:ring-offset-slate-950 rounded-md px-1">Terms of Service</a>
           </div>
         </div>
       </footer>
