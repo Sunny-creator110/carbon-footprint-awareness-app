@@ -75,8 +75,8 @@ function App() {
 
   return (
     <div 
-      className="min-h-screen flex flex-col selection:bg-green-600 selection:text-white bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: "url('/nature_bg.png')" }}
+      className="min-h-screen flex flex-col selection:bg-green-600 selection:text-white bg-cover bg-center bg-no-repeat relative transition-all duration-500"
+      style={{ backgroundImage: user ? "url('/dashboard_bg.png')" : "url('/nature_bg.png')" }}
     >
       {/* Dynamic Background Dark Overlay to maintain 100% WCAG contrast while showing premium visuals */}
       <div className={`absolute inset-0 backdrop-blur-[2px] transition-colors duration-500 z-0 pointer-events-none ${user ? 'bg-[#080d1a]/93' : 'bg-[#080d1a]/82'}`} />
