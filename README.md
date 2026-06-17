@@ -1,5 +1,7 @@
 # EcoTrace: Carbon Footprint Awareness Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-brightgreen?style=for-the-badge)](https://ecotrace-carbon-app.onrender.com)
+
 A production-ready, accessible, scalable Carbon Footprint Awareness Platform built on the MERN stack (MongoDB, Express, React, Node.js) and optimized for containerized deployment on Google Cloud Run.
 
 ---
